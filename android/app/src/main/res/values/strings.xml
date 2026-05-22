@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ComradeConnect</string>
+    <string name="title_activity_main">ComradeConnect</string>
+    <string name="package_name">com.comradeconnect.app</string>
+    <string name="custom_url_scheme">com.comradeconnect.app</string>
+</resources>
