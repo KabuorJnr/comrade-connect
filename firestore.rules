@@ -1,0 +1,94 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules --project comrade-connect-184cb
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // A real (email/password) account, not an anonymous browsing session.
+    function registered() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function isOwner(uid) {
+      return registered() && request.auth.uid == uid;
+    }
+
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    function validPhone(p) {
+      return p is string && p.matches('^254[17][0-9]{8}$');
+    }
+
+    match /artifacts/{appId}/public/data {
+
+      // Public seller profiles: anyone can browse, only the owner can write. isPro is set by the backend only.
+      match /profiles/{uid} {
+        allow read: if true;
+        allow create: if isOwner(uid)
+          && request.resource.data.uid == uid
+          && request.resource.data.name is string && request.resource.data.name.size() > 0
+          && request.resource.data.role in ['student', 'merchant', 'trader']
+          && validPhone(request.resource.data.phone)
+          && request.resource.data.get('isPro', false) == false;
+        allow update: if isOwner(uid)
+          && request.resource.data.uid == uid
+          && request.resource.data.role in ['student', 'merchant', 'trader']
+          && validPhone(request.resource.data.phone)
+          && request.resource.data.get('isPro', false) == resource.data.get('isPro', false);
+        allow delete: if isOwner(uid);
+      }
+
+      // Marketplace listings (products and services).
+      match /services/{listingId} {
+        function sellerIsPro() {
+          return get(/databases/$(database)/documents/artifacts/$(appId)/public/data/profiles/$(request.auth.uid)).data.get('isPro', false) == true;
+        }
+
+        function validListing() {
+          let d = request.resource.data;
+          return d.title is string && d.title.size() > 0 && d.title.size() <= 100
+            && d.price is number && d.price >= 0
+            && d.kind in ['product', 'service']
+            && d.status in ['available', 'sold']
+            && validPhone(d.phone)
+            && (d.get('image', '') == '' || (d.image is string && d.image.size() < 800000))
+            && (d.get('sellerPro', false) == false || sellerIsPro());
+        }
+
+        allow read: if true;
+        allow create: if registered()
+          && request.resource.data.sellerId == request.auth.uid
+          && request.resource.data.status == 'available'
+          && validListing();
+        allow update: if isOwner(resource.data.get('sellerId', ''))
+          && request.resource.data.sellerId == resource.data.sellerId
+          && validListing();
+        allow delete: if isOwner(resource.data.get('sellerId', ''));
+      }
+
+      // Campus feed.
+      match /community_posts/{postId} {
+        allow read: if true;
+        allow create: if registered()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.content is string
+          && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 1000
+          && request.resource.data.type in ['General', 'Event', 'Announcement']
+          && request.resource.data.likedBy == [];
+        // Authors may edit their post; any registered user may like/unlike (only their own uid).
+        allow update: if (isOwner(resource.data.get('authorId', '')) && request.resource.data.authorId == resource.data.authorId)
+          || (registered() && onlyChanges(['likedBy'])
+              && request.resource.data.likedBy.toSet().difference(resource.data.get('likedBy', []).toSet())
+                   .union(resource.data.get('likedBy', []).toSet().difference(request.resource.data.likedBy.toSet()))
+                   .hasOnly([request.auth.uid]));
+        allow delete: if isOwner(resource.data.get('authorId', ''));
+      }
+    }
+  }
+}

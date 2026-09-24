@@ -6,25 +6,27 @@ _ComradeConnect_ is a modern, React-based cross-platform application designed to
 
 ---
 
-## Features
+## What it does
 
-- 🌐 Modern UI built with React and TailwindCSS
-- 🚀 Super-fast development with Vite and HMR
-- 📱 Mobile-ready (Capacitor & Android support)
-- 🔒 Authentication and real-time data via Firebase
-- 💬 Campus marketplace & community newsfeed
-- 💸 M-Pesa Daraja payment integration (backend)
-- ⚙️ Linting and robust developer tooling
+ComradeConnect puts campus **students, merchants and traders in one place**:
+
+- **Register an account** (email + password) as a Student, Merchant or Trader, with a phone number, location and shop name.
+- **Sell online for free** — post products or services with a photo, price (fixed or negotiable), category and location. Edit, mark as sold, relist or delete your own listings.
+- **Browse the marketplace** — search, filter by products/services and category, sort by newest or price. Guests can browse; signing in is required to see contact actions.
+- **Contact sellers** by phone call or WhatsApp straight from a listing.
+- **Seller directory** — every registered seller with their shop page and active listings.
+- **Campus feed** — registered users can post general updates, events and notices, and like posts.
+- **Seller Pro (optional)** — Ksh 250/month via M-Pesa STK push for a verified badge and priority placement.
 
 ---
 
 ## Tech Stack
 
-- **Frontend:** JavaScript (React 18, Vite)
-- **Styling:** TailwindCSS, PostCSS
-- **Mobile:** Capacitor, Android
-- **Backend:** Node.js (Express), M-Pesa Daraja API, Axios
-- **Cloud:** Firebase (Hosting, Auth, Database, Firestore, etc.)
+- **Frontend:** React 18, Vite, TailwindCSS
+- **Mobile:** Capacitor (Android)
+- **Data & auth:** Firebase Authentication + Cloud Firestore (project `comrade-connect-184cb`)
+- **Hosting:** Firebase Hosting (project `comrade-connect-2e29c`)
+- **Payments backend:** Node.js / Express + M-Pesa Daraja API (`server/`)
 
 ---
 
@@ -32,50 +34,70 @@ _ComradeConnect_ is a modern, React-based cross-platform application designed to
 
 ### Prerequisites
 
-- Node.js (v16+ recommended)
-- Yarn or npm
+- Node.js 18+
+- Firebase CLI (`npm i -g firebase-tools`)
 - Android Studio (for Android builds)
-- Firebase project
 
-### Setup & Installation
+### One-time Firebase setup (project `comrade-connect-184cb`)
 
-1. **Clone the repository**
+1. In the Firebase console → **Authentication → Sign-in method**, enable **Email/Password** and **Anonymous** (anonymous is used so guests can browse).
+2. Deploy the Firestore security rules:
     ```bash
-    git clone https://github.com/KabuorJnr/comrade-connect.git
-    cd comrade-connect
+    firebase deploy --only firestore:rules --project data
     ```
+   (`data` is an alias for `comrade-connect-184cb` in `.firebaserc`.)
 
-2. **Install dependencies**
-    ```bash
-    npm install   # or yarn install
-    ```
+### Run locally
 
-3. **Configure Firebase**
-    - Update the `firebase.json` and `.firebaserc` with your credentials.
+```bash
+npm install
+npm run dev
+```
 
-4. **Run the frontend app**
-    ```bash
-    npm run dev
-    ```
+To develop fully offline against the Firebase emulators:
 
-5. **Build for production**
-    ```bash
-    npm run build
-    ```
+```bash
+firebase emulators:start --only auth,firestore --project data
+VITE_USE_EMULATORS=true npm run dev
+```
 
-6. **Android (Capacitor)**
-    ```bash
-    npx cap sync android
-    npx cap open android
-    # Build and run from Android Studio
-    ```
+### Environment variables (frontend)
 
-7. **Backend Server (M-Pesa Daraja)**
-    ```bash
-    cd server
-    npm install
-    npm run start
-    ```
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | URL of the M-Pesa payment server (defaults to `http://localhost:5000`) |
+| `VITE_USE_EMULATORS` | `true` to use the local Auth/Firestore emulators |
+
+### Build & Android
+
+```bash
+npm run build
+npx cap sync android
+npx cap open android
+```
+
+### Payment server (M-Pesa Daraja)
+
+```bash
+cd server
+cp .env.example .env   # fill in your Daraja credentials — never commit .env
+npm install
+npm run start
+```
+
+---
+
+## Data model
+
+All data lives under `artifacts/comrade-connect-184cb/public/data/` in Firestore:
+
+| Collection | Contents | Who can write |
+| --- | --- | --- |
+| `profiles/{uid}` | name, role, business name, phone, location, bio, `isPro` | the owner (cannot set `isPro`) |
+| `services` | listings: kind, title, description, category, price, photo, seller info, status | the seller |
+| `community_posts` | type, content, author, likes | the author; any registered user can like |
+
+Rules are in [`firestore.rules`](./firestore.rules).
 
 ---
 
@@ -85,7 +107,11 @@ _ComradeConnect_ is a modern, React-based cross-platform application designed to
 /
 ├─ android/            # Capacitor Android native project
 ├─ server/             # Express backend for M-Pesa & API
-├─ src/                # React client source code
+├─ src/
+│  ├─ components/      # Forms, modals, listing & post cards
+│  ├─ views/           # Market, Sellers, Feed, Profile screens
+│  └─ lib/             # Firebase setup and helpers
+├─ firestore.rules     # Firestore security rules
 ├─ public/             # Static public assets
 ├─ .github/            # GitHub/workflow configs
 ├─ package.json        # Project metadata and scripts

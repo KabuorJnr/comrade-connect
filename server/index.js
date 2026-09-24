@@ -4,7 +4,8 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+// Restrict browser origins in production, e.g. CORS_ORIGIN=https://comrade-connect-2e29c.web.app
+app.use(cors(process.env.CORS_ORIGIN ? { origin: process.env.CORS_ORIGIN.split(',') } : undefined));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
@@ -39,21 +40,26 @@ const getOAuthToken = async (req, res, next) => {
   }
 };
 
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
 // Route: Initiate STK Push
 app.post('/api/stkpush', getOAuthToken, async (req, res) => {
-  let { phoneNumber, amount } = req.body;
-
-  if (!phoneNumber || !amount) {
-    return res.status(400).json({ error: 'Phone number and amount are required' });
-  }
+  const { accountReference } = req.body;
+  let phoneNumber = String(req.body.phoneNumber || '').replace(/\D/g, '');
+  const amount = Math.round(Number(req.body.amount));
 
   // Format phone number to start with 254
   if (phoneNumber.startsWith('0')) {
     phoneNumber = `254${phoneNumber.substring(1)}`;
-  } else if (phoneNumber.startsWith('+254')) {
-    phoneNumber = phoneNumber.substring(1);
   } else if (!phoneNumber.startsWith('254')) {
     phoneNumber = `254${phoneNumber}`;
+  }
+
+  if (!/^254[17]\d{8}$/.test(phoneNumber)) {
+    return res.status(400).json({ error: 'A valid Safaricom phone number is required' });
+  }
+  if (!Number.isFinite(amount) || amount < 1) {
+    return res.status(400).json({ error: 'A valid amount is required' });
   }
 
   const shortCode = process.env.DARAJA_SHORTCODE;
@@ -82,7 +88,8 @@ app.post('/api/stkpush', getOAuthToken, async (req, res) => {
     PartyB: shortCode,
     PhoneNumber: phoneNumber,
     CallBackURL: callbackUrl,
-    AccountReference: 'ComradeConnect Pro',
+    // Daraja limits AccountReference to 12 characters.
+    AccountReference: String(accountReference || 'ComradePro').slice(0, 12),
     TransactionDesc: 'Pro Seller Subscription'
   };
 
