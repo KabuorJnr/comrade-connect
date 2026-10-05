@@ -1,9 +1,9 @@
 {
-  "appName": "ChuoHub",
+  "appName": "Komradi",
   "university": null,
-  "tagline": "Kenya's campus marketplace. Students, merchants and traders at every university, buying and selling in one place.",
+  "tagline": "The comrades' marketplace. Students, merchants and traders at every university in Kenya, buying and selling in one place.",
   "android": {
-    "appId": "com.chuohub.app",
+    "appId": "com.komradi.app",
     "versionName": "1.0.0",
     "versionCode": 1
   },

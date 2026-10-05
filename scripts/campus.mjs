@@ -179,7 +179,7 @@ function createCampus() {
     university: id,
     tagline: `The ${campusName} marketplace for students, merchants and traders.`,
     android: {
-      appId: `com.chuohub.${id.replace(/-/g, '_').replace(/^(\d)/, 'c$1')}`,
+      appId: `com.komradi.${id.replace(/-/g, '_').replace(/^(\d)/, 'c$1')}`,
       versionName: '1.0.0',
       versionCode: 1,
     },

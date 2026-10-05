@@ -1,9 +1,9 @@
-# ChuoHub
+# Komradi
 
-**Kenya's campus marketplace.**
+**The comrades' marketplace.**
 
-ChuoHub (*chuo* is Swahili for university) puts students, merchants and traders at every university in
-one place. One app runs for the whole country: people pick their university, register, and buy and sell
+Komradi (from *comrade*, what Kenyan university students call each other) puts students, merchants and
+traders at every university in one place. One app runs for the whole country: people pick their university, register, and buy and sell
 there. Each university is customised by its own admins.
 
 **Get the Android app:** [latest release](https://github.com/KabuorJnr/comrade-connect/releases/latest)
@@ -103,7 +103,7 @@ VITE_USE_EMULATORS=true npm run dev
 ### Build configs
 
 [`campuses/`](./campuses/README.md) holds **build-time** settings: app name, Android app ID, icon,
-default colour, default categories and map tiles. `campuses/default` is the national ChuoHub app.
+default colour, default categories and map tiles. `campuses/default` is the national Komradi app.
 A folder can also set `"university": "<id>"` to build a dedicated app that opens straight into one
 university (see `campuses/jkuat`). Everything a university customises lives in the database and is
 edited by its admins in the app; no rebuild is needed.
@@ -126,7 +126,7 @@ published to **[Releases](https://github.com/KabuorJnr/comrade-connect/releases/
 **On your computer** (Android Studio / Android SDK and JDK 21):
 
 ```bash
-npm run campus -- apk default            # → release/default/ChuoHub-1.0.0-debug.apk
+npm run campus -- apk default            # → release/default/Komradi-1.0.0-debug.apk
 npm run campus -- apk default --release  # signed APK + AAB for the Play Store
 npm run campus -- android default        # brand + sync only, then: npx cap open android
 ```
@@ -135,11 +135,11 @@ Debug APKs install directly on a phone (allow "install unknown apps"). For the P
 keystore once and keep it safe; every update must be signed with the same one:
 
 ```bash
-keytool -genkey -v -keystore chuohub.jks -alias chuohub -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore komradi.jks -alias komradi -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 Locally, set `CC_KEYSTORE_FILE`, `CC_KEYSTORE_PASSWORD`, `CC_KEY_ALIAS`, `CC_KEY_PASSWORD` before
-`--release`. On GitHub, add repository secrets `CC_KEYSTORE_BASE64` (`base64 -w0 chuohub.jks`),
+`--release`. On GitHub, add repository secrets `CC_KEYSTORE_BASE64` (`base64 -w0 komradi.jks`),
 `CC_KEYSTORE_PASSWORD`, `CC_KEY_ALIAS`, `CC_KEY_PASSWORD`, then run the workflow with *release* ticked.
 
 The `android/` folder is committed with the `default` branding. Building another config rewrites the

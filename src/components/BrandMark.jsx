@@ -1,4 +1,4 @@
-// ChuoHub mark: a map pin (the central place) holding a graduation cap (the university).
+// Komradi mark: a map pin (the central place) holding a graduation cap (the university).
 // Same artwork as campuses/default/logo.png and public/favicon.svg.
 export default function BrandMark({ className = 'h-14 w-14' }) {
   return (

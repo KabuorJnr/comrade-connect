@@ -6,7 +6,7 @@ name, colours, logo, categories, locations and map from the app's **Admin** tab,
 
 | Folder | Builds |
 | --- | --- |
-| `default/` | **ChuoHub**, the national app. Users pick their university. |
+| `default/` | **Komradi**, the national app. Users pick their university. |
 | `jkuat/` | Example dedicated app that opens straight into the university with ID `jkuat`. |
 
 Every folder inherits from [`default/campus.json`](./default/campus.json) and only lists what differs.
@@ -18,7 +18,7 @@ Every folder inherits from [`default/campus.json`](./default/campus.json) and on
 | `appName` | App name on the home screen and in the app |
 | `university` | `null` for the national app; a university ID to lock the build to one university |
 | `tagline` | Text on the university picker and in search results |
-| `android.appId` | Unique Android ID, e.g. `com.chuohub.app`. **Never change it after publishing**: Android treats a new ID as a different app |
+| `android.appId` | Unique Android ID, e.g. `com.komradi.app`. **Never change it after publishing**: Android treats a new ID as a different app |
 | `android.versionName` / `android.versionCode` | Version shown to users / whole number that must go up with every Play Store upload |
 | `theme.primary` | Default brand colour (universities override it) and launcher-icon background |
 | `theme.background` | Splash screen and status-bar colour |
@@ -34,7 +34,7 @@ screen. Folders without one use `default/logo.png`.
 ## Dedicated university app
 
 ```bash
-npm run campus -- new egerton "ChuoHub Egerton" "Egerton"
+npm run campus -- new egerton "Komradi Egerton" "Egerton"
 npm run campus -- apk egerton
 ```
 

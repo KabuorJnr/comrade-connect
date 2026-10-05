@@ -72,7 +72,7 @@ export function contrastText(hex) {
   return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#000000' : '#ffffff';
 }
 
-const SELECTED_KEY = 'chuohub.university';
+const SELECTED_KEY = 'komradi.university';
 
 export function savedUniversityId() {
   try {

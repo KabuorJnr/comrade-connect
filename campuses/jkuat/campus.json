@@ -1,9 +1,9 @@
 {
-  "appName": "ChuoHub JKUAT",
+  "appName": "Komradi JKUAT",
   "university": "jkuat",
   "tagline": "The JKUAT marketplace for comrades, merchants and traders.",
   "android": {
-    "appId": "com.chuohub.jkuat",
+    "appId": "com.komradi.jkuat",
     "versionName": "1.0.0",
     "versionCode": 1
   },
