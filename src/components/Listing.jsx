@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { MapPin, Phone, MessageCircle, Package, Wrench, Pencil, Trash2, CheckCircle, RotateCcw, Store } from 'lucide-react';
 import { listingDoc } from '../lib/firebase';
+import { campus } from '../lib/campus';
 import { formatPrice, timeAgo, whatsappLink } from '../lib/utils';
 import { Modal, Button, Avatar, RoleBadge, Notice } from './ui';
 
@@ -61,7 +62,7 @@ export function ListingDetail({ listing, onClose, isOwner, onEdit, onViewSeller,
   if (!listing) return null;
 
   const sold = listing.status === 'sold';
-  const wa = whatsappLink(listing.phone, `Hi, I saw "${listing.title}" on ComradeConnect. Is it still available?`);
+  const wa = whatsappLink(listing.phone, `Hi, I saw "${listing.title}" on ${campus.appName}. Is it still available?`);
 
   const run = async (label, fn) => {
     setBusy(label);
@@ -126,7 +127,7 @@ export function ListingDetail({ listing, onClose, isOwner, onEdit, onViewSeller,
           <div className="truncate text-sm font-semibold text-white">{listing.seller || 'Comrade'}</div>
           <RoleBadge role={listing.sellerRole} pro={listing.sellerPro} />
         </div>
-        {listing.sellerId && <span className="text-xs text-[#2997ff]">View shop</span>}
+        {listing.sellerId && <span className="text-xs text-brand-light">View shop</span>}
       </button>
 
       <div className="mt-5 space-y-3">
@@ -152,7 +153,7 @@ export function ListingDetail({ listing, onClose, isOwner, onEdit, onViewSeller,
           <>
             <a
               href={`tel:+${listing.phone?.replace(/^\+/, '')}`}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white hover:bg-[#0077ed]"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-semibold text-white hover:bg-brand/90"
             >
               <Phone className="h-4 w-4" /> Call seller
             </a>

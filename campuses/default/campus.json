@@ -1,0 +1,45 @@
+{
+  "appName": "ComradeConnect",
+  "campusName": "Campus",
+  "tagline": "Students, merchants and traders in one place. Register, list what you sell, and reach the whole campus.",
+  "android": {
+    "appId": "com.comradeconnect.app",
+    "versionName": "1.0.0",
+    "versionCode": 1
+  },
+  "theme": {
+    "primary": "#0071e3",
+    "background": "#000000"
+  },
+  "dataNamespace": "comrade-connect-184cb",
+  "currency": "Ksh",
+  "categories": [
+    "Electronics",
+    "Fashion",
+    "Food",
+    "Books",
+    "Salon",
+    "Laundry",
+    "Photography",
+    "Graphics",
+    "Academic",
+    "Transport",
+    "Housing",
+    "Other"
+  ],
+  "locations": [],
+  "pro": {
+    "enabled": true,
+    "price": 250
+  },
+  "paymentsApiUrl": "",
+  "firebase": {
+    "apiKey": "AIzaSyA1FJZC0NtFoIbcCIXVFuU1PPrr-d3FWR8",
+    "authDomain": "comrade-connect-184cb.firebaseapp.com",
+    "projectId": "comrade-connect-184cb",
+    "storageBucket": "comrade-connect-184cb.firebasestorage.app",
+    "messagingSenderId": "910700491278",
+    "appId": "1:910700491278:web:db134716aa726302c3425f",
+    "measurementId": "G-J52ZHC57WM"
+  }
+}

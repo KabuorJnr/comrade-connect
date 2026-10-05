@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Briefcase, Store, Users, User, Plus, LogIn } from 'lucide-react';
 import { onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { App as NativeApp } from '@capacitor/app';
 import { auth, listingsCol, postsCol, profilesCol, profileDoc } from './lib/firebase';
 import { toMillis } from './lib/utils';
+import { campus, LOCATIONS_LIST_ID } from './lib/campus';
 import { Avatar, Notice } from './components/ui';
 import AuthModal from './components/AuthModal';
 import ProfileForm from './components/ProfileForm';
@@ -108,7 +111,7 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
-    if (!window.confirm('Sign out of ComradeConnect?')) return;
+    if (!window.confirm(`Sign out of ${campus.appName}?`)) return;
     await signOut(auth);
     setTab('market');
   };
@@ -117,6 +120,28 @@ export default function App() {
     setOpenListingId(null);
     setSellerId(uid);
   };
+
+  // Android back button: close the top-most screen first, then return to the market, then exit.
+  const handleBack = useRef(() => {});
+  useEffect(() => {
+    handleBack.current = () => {
+      if (showUpgrade) return setShowUpgrade(false);
+      if (listingForm) return setListingForm(null);
+      if (editingProfile) return setEditingProfile(false);
+      if (authMode) return setAuthMode(null);
+      if (openListingId) return setOpenListingId(null);
+      if (sellerId) return setSellerId(null);
+      if (tab !== 'market') return setTab('market');
+      NativeApp.exitApp();
+    };
+  });
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    const listener = NativeApp.addListener('backButton', () => handleBack.current());
+    return () => {
+      listener.then((l) => l.remove());
+    };
+  }, []);
 
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-black pb-32 text-[#f5f5f7]">
@@ -129,13 +154,13 @@ export default function App() {
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
           <button type="button" onClick={() => setTab('market')} className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-white" />
-            <span className="text-sm font-semibold tracking-wide text-white/90">ComradeConnect</span>
+            <span className="text-sm font-semibold tracking-wide text-white/90">{campus.appName}</span>
           </button>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={startSelling}
-              className="inline-flex items-center gap-1 rounded-full bg-[#0071e3] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0077ed]"
+              className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90"
             >
               <Plus className="h-3.5 w-3.5" /> Sell
             </button>
@@ -225,6 +250,12 @@ export default function App() {
           ))}
         </div>
       </nav>
+
+      <datalist id={LOCATIONS_LIST_ID}>
+        {campus.locations.map((place) => (
+          <option key={place} value={place} />
+        ))}
+      </datalist>
 
       {authMode && (
         <AuthModal open mode={authMode} setMode={setAuthMode} onClose={() => setAuthMode(null)} />

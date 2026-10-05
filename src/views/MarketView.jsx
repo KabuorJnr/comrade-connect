@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, Briefcase, SlidersHorizontal } from 'lucide-react';
+import { campus } from '../lib/campus';
 import { CATEGORIES, toMillis } from '../lib/utils';
 import { ListingCard } from '../components/Listing';
 import { EmptyState, Spinner } from '../components/ui';
@@ -37,9 +38,9 @@ export default function MarketView({ listings, loading, error, sellerCount, onOp
     <div className="animate-fade-in">
       <section className="mb-6 rounded-[2rem] border border-white/10 bg-white/5 p-5 backdrop-blur-xl surface-glow">
         <p className="text-[10px] uppercase tracking-[0.32em] text-gray-500">Campus marketplace</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tighter text-gradient">ComradeConnect.</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tighter text-gradient">{campus.appName}.</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Students, merchants and traders in one place. Register, list what you sell, and reach the whole campus.
+          {campus.tagline}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-center text-xs">
           <div className="rounded-2xl border border-white/5 bg-black/25 px-3 py-3">
@@ -54,7 +55,7 @@ export default function MarketView({ listings, loading, error, sellerCount, onOp
         <button
           type="button"
           onClick={onSell}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white hover:bg-[#0077ed]"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-semibold text-white hover:bg-brand/90"
         >
           <Plus className="h-4 w-4" /> Sell something
         </button>
@@ -99,14 +100,14 @@ export default function MarketView({ listings, loading, error, sellerCount, onOp
               type="button"
               onClick={() => setKind(value)}
               className={`rounded-full px-3 py-1 font-medium ${
-                kind === value ? 'bg-[#0071e3] text-white' : 'bg-[#1d1d1f] text-gray-400'
+                kind === value ? 'bg-brand text-white' : 'bg-[#1d1d1f] text-gray-400'
               }`}
             >
               {label}
             </button>
           ))}
           <label className="ml-auto flex items-center gap-1.5 text-gray-500">
-            <input type="checkbox" className="accent-[#0071e3]" checked={showSold} onChange={(e) => setShowSold(e.target.checked)} />
+            <input type="checkbox" className="accent-brand" checked={showSold} onChange={(e) => setShowSold(e.target.checked)} />
             Show sold
           </label>
         </div>

@@ -63,7 +63,7 @@ export const inputClass =
 
 export function Button({ children, loading, variant = 'primary', className = '', ...props }) {
   const variants = {
-    primary: 'bg-[#0071e3] text-white hover:bg-[#0077ed]',
+    primary: 'bg-brand text-white hover:bg-brand/90',
     light: 'bg-white text-black hover:bg-gray-200',
     ghost: 'bg-[#1d1d1f] text-white hover:bg-[#2c2c2e]',
     danger: 'bg-red-600 text-white hover:bg-red-700',
@@ -117,7 +117,7 @@ export function RoleBadge({ role, pro }) {
           {role}
         </span>
       )}
-      {pro && <BadgeCheck className="h-4 w-4 text-[#2997ff]" aria-label="Pro seller" />}
+      {pro && <BadgeCheck className="h-4 w-4 text-brand-light" aria-label="Pro seller" />}
     </span>
   );
 }

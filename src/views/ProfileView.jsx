@@ -1,4 +1,6 @@
 import { User, LogOut, Pencil, Zap, Plus, MapPin, Phone, AlertCircle } from 'lucide-react';
+import { campus } from '../lib/campus';
+import { PRO_ENABLED } from '../lib/firebase';
 import { ROLES, toMillis } from '../lib/utils';
 import { ListingCard } from '../components/Listing';
 import { Avatar, Button, RoleBadge } from '../components/ui';
@@ -22,7 +24,7 @@ export default function ProfileView({
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#2c2c2e]">
           <User className="h-8 w-8 text-gray-400" />
         </div>
-        <h2 className="text-2xl font-semibold tracking-tight text-white">Join ComradeConnect</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-white">Join {campus.appName}</h2>
         <p className="mx-auto mt-2 max-w-xs text-sm text-gray-400">
           Register as a student, merchant or trader to list products and services, post to the campus feed and contact
           sellers.
@@ -115,7 +117,7 @@ export default function ProfileView({
         )}
       </section>
 
-      {!profile?.isPro && (
+      {PRO_ENABLED && !profile?.isPro && (
         <section className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-r from-[#1c1c1e] to-[#2c2c2e] p-6">
           <div className="mb-4 flex items-start justify-between">
             <div>
@@ -125,7 +127,7 @@ export default function ProfileView({
             <Zap className="h-5 w-5 fill-yellow-500 text-yellow-500" />
           </div>
           <Button variant="light" className="w-full" onClick={onUpgrade}>
-            Upgrade (Ksh 250/mo)
+            Upgrade ({campus.currency} {campus.pro.price}/mo)
           </Button>
         </section>
       )}

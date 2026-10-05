@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search, Store, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { campus } from '../lib/campus';
 import { ROLES, whatsappLink, toMillis } from '../lib/utils';
 import { Avatar, RoleBadge, EmptyState, Spinner, Modal } from '../components/ui';
 import { ListingCard } from '../components/Listing';
@@ -104,7 +105,7 @@ export function SellerProfileModal({ profile, listings, onClose, onOpenListing, 
   const own = listings
     .filter((l) => l.sellerId === profile.uid)
     .sort((a, b) => (a.status === 'sold') - (b.status === 'sold') || toMillis(b.createdAt) - toMillis(a.createdAt));
-  const wa = whatsappLink(profile.phone, 'Hi, I found your shop on ComradeConnect.');
+  const wa = whatsappLink(profile.phone, `Hi, I found your shop on ${campus.appName}.`);
 
   return (
     <Modal open onClose={onClose} title="Seller" wide>
@@ -127,7 +128,7 @@ export function SellerProfileModal({ profile, listings, onClose, onOpenListing, 
         <button
           type="button"
           onClick={onRequireAuth}
-          className="mt-5 w-full rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white"
+          className="mt-5 w-full rounded-full bg-brand py-3 text-sm font-semibold text-white"
         >
           Sign in to contact
         </button>
@@ -136,7 +137,7 @@ export function SellerProfileModal({ profile, listings, onClose, onOpenListing, 
           <div className="mt-5 grid grid-cols-2 gap-2">
             <a
               href={`tel:+${profile.phone}`}
-              className="flex items-center justify-center gap-2 rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white"
+              className="flex items-center justify-center gap-2 rounded-full bg-brand py-3 text-sm font-semibold text-white"
             >
               <Phone className="h-4 w-4" /> Call
             </a>

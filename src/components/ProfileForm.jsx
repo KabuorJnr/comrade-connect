@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { updateProfile } from 'firebase/auth';
 import { setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, profileDoc } from '../lib/firebase';
+import { LOCATIONS_LIST_ID } from '../lib/campus';
 import { ROLES, normalizePhone } from '../lib/utils';
 import { Modal, Field, Button, Notice, inputClass } from './ui';
 
@@ -81,7 +82,7 @@ export default function ProfileForm({ open, onClose, user, profile }) {
             <input required type="tel" className={inputClass} value={form.phone} onChange={set('phone')} />
           </Field>
           <Field label="Location">
-            <input className={inputClass} value={form.location} onChange={set('location')} />
+            <input list={LOCATIONS_LIST_ID} className={inputClass} value={form.location} onChange={set('location')} />
           </Field>
         </div>
         <Field label="About you / your shop">

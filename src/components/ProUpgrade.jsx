@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { CheckCircle, Smartphone } from 'lucide-react';
 import { API_URL } from '../lib/firebase';
 import { normalizePhone } from '../lib/utils';
+import { campus } from '../lib/campus';
 import { Modal, Button, Field, Notice, inputClass } from './ui';
 
-const PRO_PRICE = 250;
+const PRO_PRICE = campus.pro.price;
 
 // Optional Pro subscription via M-Pesa STK push. Selling is free; Pro only adds a badge.
 export default function ProUpgrade({ open, onClose, profile, user }) {
@@ -44,7 +45,7 @@ export default function ProUpgrade({ open, onClose, profile, user }) {
         <div className="space-y-4 text-center">
           <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
           <p className="text-sm text-gray-300">
-            Check your phone and enter your M-Pesa PIN to complete the Ksh {PRO_PRICE} payment. Your Pro badge is
+            Check your phone and enter your M-Pesa PIN to complete the {campus.currency} {PRO_PRICE} payment. Your Pro badge is
             activated once the payment is confirmed.
           </p>
           <Button variant="ghost" className="w-full" onClick={onClose}>
@@ -56,14 +57,14 @@ export default function ProUpgrade({ open, onClose, profile, user }) {
           <div className="rounded-3xl border border-white/5 bg-[#1d1d1f] p-5">
             <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-3">
               <span className="font-medium text-gray-300">Monthly plan</span>
-              <span className="text-xl font-semibold text-white">Ksh {PRO_PRICE}</span>
+              <span className="text-xl font-semibold text-white">{campus.currency} {PRO_PRICE}</span>
             </div>
             <ul className="space-y-2 text-sm text-gray-400">
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-[#0071e3]" /> Verified Pro badge on your shop and listings
+                <CheckCircle className="h-4 w-4 text-brand" /> Verified Pro badge on your shop and listings
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-[#0071e3]" /> Pro listings shown first in search
+                <CheckCircle className="h-4 w-4 text-brand" /> Pro listings shown first in search
               </li>
             </ul>
             <p className="mt-3 text-xs text-gray-500">Listing items is free for every registered account.</p>
@@ -82,7 +83,7 @@ export default function ProUpgrade({ open, onClose, profile, user }) {
           </Field>
           <Notice>{error}</Notice>
           <Button variant="success" loading={busy} className="w-full" onClick={pay}>
-            Pay Ksh {PRO_PRICE} with M-Pesa
+            Pay {campus.currency} {PRO_PRICE} with M-Pesa
           </Button>
         </div>
       )}

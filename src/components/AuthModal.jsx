@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth';
 import { setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, profileDoc } from '../lib/firebase';
+import { LOCATIONS_LIST_ID } from '../lib/campus';
 import { ROLES, normalizePhone, authErrorMessage } from '../lib/utils';
 import { Modal, Field, Button, Notice, inputClass } from './ui';
 
@@ -104,7 +105,7 @@ export default function AuthModal({ open, mode, setMode, onClose }) {
                     onClick={() => setForm({ ...form, role: key })}
                     className={`rounded-2xl border px-2 py-3 text-center transition-colors ${
                       form.role === key
-                        ? 'border-[#0071e3] bg-[#0071e3]/15 text-white'
+                        ? 'border-brand bg-brand/15 text-white'
                         : 'border-white/5 bg-[#1d1d1f] text-gray-400 hover:text-white'
                     }`}
                   >
@@ -136,7 +137,8 @@ export default function AuthModal({ open, mode, setMode, onClose }) {
               </Field>
               <Field label="Location">
                 <input
-                  placeholder="e.g. Hall 6, Juja"
+                  placeholder="e.g. Hall 6"
+                  list={LOCATIONS_LIST_ID}
                   className={inputClass}
                   value={form.location}
                   onChange={set('location')}
@@ -183,7 +185,7 @@ export default function AuthModal({ open, mode, setMode, onClose }) {
             <>
               <p>
                 New here?{' '}
-                <button type="button" className="font-medium text-[#2997ff]" onClick={() => switchMode('register')}>
+                <button type="button" className="font-medium text-brand-light" onClick={() => switchMode('register')}>
                   Create an account
                 </button>
               </p>
@@ -195,7 +197,7 @@ export default function AuthModal({ open, mode, setMode, onClose }) {
           {mode !== 'signin' && (
             <p>
               Already registered?{' '}
-              <button type="button" className="font-medium text-[#2997ff]" onClick={() => switchMode('signin')}>
+              <button type="button" className="font-medium text-brand-light" onClick={() => switchMode('signin')}>
                 Sign in
               </button>
             </p>

@@ -9,10 +9,10 @@ export default {
     extend: {
       // Add custom colors, spacing, or shadows here
       colors: {
+        // Campus brand colour, set per campus from campuses/<id>/campus.json (see vite.config.js).
         brand: {
-          light: '#3fbaeb',
-          DEFAULT: '#0fa9e6',
-          dark: '#0c87b8',
+          DEFAULT: 'rgb(var(--brand) / <alpha-value>)',
+          light: 'rgb(var(--brand-light) / <alpha-value>)',
         },
       },
       fontFamily: {

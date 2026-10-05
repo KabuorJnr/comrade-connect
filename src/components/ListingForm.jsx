@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { listingsCol, listingDoc } from '../lib/firebase';
+import { campus, LOCATIONS_LIST_ID } from '../lib/campus';
 import { CATEGORIES, normalizePhone, compressImage } from '../lib/utils';
 import { Modal, Field, Button, Notice, inputClass } from './ui';
 
@@ -165,7 +166,7 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
               ))}
             </select>
           </Field>
-          <Field label="Price (Ksh)">
+          <Field label={`Price (${campus.currency})`}>
             <input
               required
               type="number"
@@ -186,7 +187,13 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
             </select>
           </Field>
           <Field label="Location">
-            <input placeholder="e.g. Hall 6" className={inputClass} value={form.location} onChange={set('location')} />
+            <input
+              placeholder={campus.locations[0] ? `e.g. ${campus.locations[0]}` : 'e.g. Hall 6'}
+              list={LOCATIONS_LIST_ID}
+              className={inputClass}
+              value={form.location}
+              onChange={set('location')}
+            />
           </Field>
         </div>
 

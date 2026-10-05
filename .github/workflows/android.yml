@@ -1,0 +1,103 @@
+name: Android APK
+
+# Builds an installable APK for every campus in campuses/ (or one picked by hand).
+# Download the APKs from the run's "Artifacts" section.
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'campuses/**'
+      - 'android/**'
+      - 'scripts/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'tailwind.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+    inputs:
+      campus:
+        description: 'Campus id (folder name in campuses/). Leave blank to build all campuses.'
+        required: false
+        default: ''
+      release:
+        description: 'Build a release APK + AAB (signed when the CC_KEYSTORE_* secrets are set)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  campuses:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        env:
+          CAMPUS: ${{ inputs.campus }}
+        run: |
+          if [ -n "$CAMPUS" ]; then
+            test -f "campuses/$CAMPUS/campus.json" || { echo "::error::Unknown campus '$CAMPUS'"; exit 1; }
+            echo "list=$(jq -cn --arg c "$CAMPUS" '[$c]')" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=$(ls campuses/*/campus.json | cut -d/ -f2 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: campuses
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        campus: ${{ fromJson(needs.campuses.outputs.list) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - run: npm ci
+
+      - name: Set up release signing
+        if: ${{ inputs.release }}
+        env:
+          CC_KEYSTORE_BASE64: ${{ secrets.CC_KEYSTORE_BASE64 }}
+          CC_KEYSTORE_PASSWORD: ${{ secrets.CC_KEYSTORE_PASSWORD }}
+          CC_KEY_ALIAS: ${{ secrets.CC_KEY_ALIAS }}
+          CC_KEY_PASSWORD: ${{ secrets.CC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$CC_KEYSTORE_BASE64" ]; then
+            echo "$CC_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "CC_KEYSTORE_FILE=$RUNNER_TEMP/release.jks"
+              echo "CC_KEYSTORE_PASSWORD=$CC_KEYSTORE_PASSWORD"
+              echo "CC_KEY_ALIAS=$CC_KEY_ALIAS"
+              echo "CC_KEY_PASSWORD=$CC_KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+          else
+            echo "::warning::CC_KEYSTORE_BASE64 secret not set; release build will be unsigned."
+          fi
+
+      - name: Build APK
+        env:
+          CAMPUS: ${{ matrix.campus }}
+          RELEASE_FLAG: ${{ inputs.release && '--release' || '' }}
+        run: npm run campus -- apk "$CAMPUS" $RELEASE_FLAG
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.campus }}-android
+          path: release/${{ matrix.campus }}/
+          if-no-files-found: error

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
+import { campus } from '../lib/campus';
 import { PostComposer, PostCard } from '../components/Community';
 import { EmptyState, Spinner } from '../components/ui';
 
@@ -20,7 +21,7 @@ export default function CommunityView({ posts, loading, user, profile, isGuest, 
   return (
     <div className="animate-fade-in space-y-4">
       <section className="rounded-3xl border border-white/5 bg-[#1d1d1f] p-6 text-center">
-        <h2 className="text-2xl font-semibold tracking-tighter text-white">Campus feed</h2>
+        <h2 className="text-2xl font-semibold tracking-tighter text-white">{campus.campusName} feed</h2>
         <p className="mx-auto mt-1 max-w-xs text-sm text-gray-400">Events, notices and updates from comrades and sellers.</p>
       </section>
 

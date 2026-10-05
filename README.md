@@ -65,16 +65,52 @@ VITE_USE_EMULATORS=true npm run dev
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_URL` | URL of the M-Pesa payment server (defaults to `http://localhost:5000`) |
+| `CAMPUS` | Which campus folder to build (defaults to `default`) |
+| `VITE_API_URL` | URL of the M-Pesa payment server (overrides `paymentsApiUrl` in the campus config) |
 | `VITE_USE_EMULATORS` | `true` to use the local Auth/Firestore emulators |
 
-### Build & Android
+### Campuses (white-label builds)
+
+The app can be branded for any campus: name, colours, logo, Android app id, categories, campus
+locations and its own separate data. Each campus is one folder in [`campuses/`](./campuses/README.md):
 
 ```bash
-npm run build
-npx cap sync android
-npx cap open android
+npm run campus -- list                                   # show campuses
+npm run campus -- new egerton "Egerton Connect" "Egerton"  # create one
+npm run campus -- dev jkuat                              # run the web app as JKUAT
 ```
+
+`npm run dev` / `npm run build` use the `default` campus unless `CAMPUS=<id>` is set.
+
+### Android app
+
+**Easiest: let GitHub build it.** Every push that touches the app runs the **Android APK** workflow,
+which builds an APK for each campus. Open the run under the repo's *Actions* tab and download
+`<campus>-android` from *Artifacts*. To build one campus, or a signed release, use *Run workflow*.
+
+**On your computer** (needs Android Studio / the Android SDK and JDK 21):
+
+```bash
+npm run campus -- apk jkuat              # → release/jkuat/JKUAT-Connect-1.0.0-debug.apk
+npm run campus -- apk jkuat --release    # signed APK + AAB for the Play Store (see below)
+npm run campus -- android jkuat          # only brand + sync, then: npx cap open android
+```
+
+Debug APKs can be installed directly on a phone (allow "install unknown apps"). Each campus has its
+own app id, so several campus apps can be installed side by side.
+
+**Release signing.** Create a keystore once and keep it safe — you need the same one for every update:
+
+```bash
+keytool -genkey -v -keystore comradeconnect.jks -alias comradeconnect -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Locally, set `CC_KEYSTORE_FILE`, `CC_KEYSTORE_PASSWORD`, `CC_KEY_ALIAS` and `CC_KEY_PASSWORD` before
+`--release`. On GitHub, add repository secrets `CC_KEYSTORE_BASE64` (output of `base64 -w0 comradeconnect.jks`),
+`CC_KEYSTORE_PASSWORD`, `CC_KEY_ALIAS` and `CC_KEY_PASSWORD`, then run the workflow with *release* ticked.
+
+The files under `android/` are committed with the `default` campus branding. Building another campus
+rewrites the icons and `capacitor.config.json`; don't commit those changes.
 
 ### Payment server (M-Pesa Daraja)
 
@@ -89,7 +125,7 @@ npm run start
 
 ## Data model
 
-All data lives under `artifacts/comrade-connect-184cb/public/data/` in Firestore:
+All data lives under `artifacts/<dataNamespace>/public/data/` in Firestore (`comrade-connect-184cb` for the default campus):
 
 | Collection | Contents | Who can write |
 | --- | --- | --- |
@@ -106,6 +142,8 @@ Rules are in [`firestore.rules`](./firestore.rules).
 ```
 /
 ├─ android/            # Capacitor Android native project
+├─ campuses/           # One folder per campus: branding, app id, data namespace
+├─ scripts/            # campus.mjs build tool
 ├─ server/             # Express backend for M-Pesa & API
 ├─ src/
 │  ├─ components/      # Forms, modals, listing & post cards

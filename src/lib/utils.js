@@ -1,17 +1,6 @@
-export const CATEGORIES = [
-  'Electronics',
-  'Fashion',
-  'Food',
-  'Books',
-  'Salon',
-  'Laundry',
-  'Photography',
-  'Graphics',
-  'Academic',
-  'Transport',
-  'Housing',
-  'Other',
-];
+import { campus } from './campus';
+
+export const CATEGORIES = campus.categories;
 
 export const ROLES = {
   student: { label: 'Student', blurb: 'Buy and sell as a comrade' },
@@ -58,7 +47,7 @@ export function timeAgo(ts, fallback = '') {
 
 export function formatPrice(price) {
   const n = Number(price);
-  return Number.isFinite(n) ? `Ksh ${n.toLocaleString()}` : `Ksh ${price ?? '-'}`;
+  return Number.isFinite(n) ? `${campus.currency} ${n.toLocaleString()}` : `${campus.currency} ${price ?? '-'}`;
 }
 
 export function initials(name) {
