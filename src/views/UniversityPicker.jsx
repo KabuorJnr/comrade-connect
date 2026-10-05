@@ -120,7 +120,9 @@ export default function UniversityPicker({
                 ? 'Check the spelling, or ask us to add your university.'
                 : isPlatformAdmin
                   ? 'Add the first university to get started.'
-                  : 'Universities will appear here once they are set up.'
+                  : isGuest
+                    ? 'Universities appear here once they are set up. Running this app? Sign in as the super admin to add the first one.'
+                    : 'Universities will appear here once they are set up.'
             }
           />
         )}

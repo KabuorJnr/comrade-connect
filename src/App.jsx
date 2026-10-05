@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { Button } from './components/ui';
 import BrandMark from './components/BrandMark';
 import { auth, universitiesCol, platformAdminDoc, userDoc } from './lib/firebase';
 import { campus } from './lib/campus';
@@ -21,7 +22,7 @@ import Marketplace from './Marketplace';
 // Placeholder university used while no university is chosen (e.g. signing in from the picker).
 const NO_UNIVERSITY = withDefaults('', { name: campus.appName, shortName: campus.appName });
 
-function Splash({ message }) {
+function Splash({ message, onRetry }) {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6 text-center">
       <BrandMark className="h-16 w-16" />
@@ -31,13 +32,28 @@ function Splash({ message }) {
       ) : (
         <Loader2 className="h-5 w-5 animate-spin text-gray-500" aria-label="Loading" />
       )}
+      {onRetry && (
+        <Button variant="ghost" onClick={onRetry}>
+          <RefreshCw className="h-4 w-4" /> Try again
+        </Button>
+      )}
     </div>
   );
+}
+
+function loadErrorMessage(err) {
+  if (err?.code === 'permission-denied') {
+    return "The database refused access. If you run this app, deploy firestore.rules (see the README's Setup section).";
+  }
+  if (err?.code === 'unavailable') return "Can't reach the server. Check your internet connection.";
+  return `Couldn't load universities (${err?.code || 'unknown error'}).`;
 }
 
 function Root() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [anonFailed, setAnonFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [platformAdmin, setPlatformAdmin] = useState({ uid: null, value: false });
   const [universitiesState, setUniversitiesState] = useState({ items: [], loading: true, error: '' });
   // A build locked to one university (campus.json "university") skips the picker entirely.
@@ -55,7 +71,14 @@ function Root() {
       onAuthStateChanged(auth, (u) => {
         setUser(u);
         setAuthReady(true);
-        if (!u) signInAnonymously(auth).catch((err) => console.warn('Anonymous sign-in unavailable:', err.code));
+        if (u) {
+          setAnonFailed(false);
+        } else {
+          signInAnonymously(auth).catch((err) => {
+            console.warn('Anonymous sign-in unavailable:', err.code);
+            setAnonFailed(true);
+          });
+        }
       }),
     [],
   );
@@ -83,8 +106,12 @@ function Root() {
       .catch(() => {});
   }, [user, selectedId]);
 
+  // Wait until there is a session (guest or real) before reading, so rules that require sign-in
+  // don't reject the first request; re-subscribe whenever the account changes.
+  const sessionReady = authReady && (Boolean(user) || anonFailed);
+  const uid = user?.uid || '';
   useEffect(() => {
-    if (!authReady) return undefined;
+    if (!sessionReady) return undefined;
     return onSnapshot(
       universitiesCol(),
       (snap) =>
@@ -95,10 +122,15 @@ function Root() {
         }),
       (err) => {
         console.error('Universities error:', err);
-        setUniversitiesState({ items: [], loading: false, error: 'Could not load universities. Check your connection.' });
+        setUniversitiesState({ items: [], loading: false, error: loadErrorMessage(err) });
       },
     );
-  }, [authReady]);
+  }, [sessionReady, uid, reloadKey]);
+
+  const retry = () => {
+    setUniversitiesState({ items: [], loading: true, error: '' });
+    setReloadKey((k) => k + 1);
+  };
 
   const universities = universitiesState.items;
   const uni = useMemo(() => {
@@ -117,10 +149,10 @@ function Root() {
   };
 
   let content;
-  if (!authReady || (universitiesState.loading && selectedId)) {
+  if (!sessionReady || (universitiesState.loading && selectedId)) {
     content = <Splash />;
   } else if (universitiesState.error && !universities.length) {
-    content = <Splash message={universitiesState.error} />;
+    content = <Splash message={universitiesState.error} onRetry={retry} />;
   } else if (campus.university && !uni) {
     content = <Splash message={`${campus.appName} isn't available yet. Please check back soon.`} />;
   } else if (!uni || picking) {
@@ -144,7 +176,7 @@ function Root() {
     content = (
       <UniversityContext.Provider value={uni}>
         <Marketplace
-          key={uni.id}
+          key={`${uni.id}:${uid}`}
           user={user}
           isGuest={isGuest}
           isPlatformAdmin={isPlatformAdmin}
