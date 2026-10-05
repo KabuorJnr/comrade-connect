@@ -13,19 +13,29 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
 }
 
-// All marketplace data lives under artifacts/{dataNamespace}/public/data/..., so campuses that share
-// a Firebase project keep separate listings, sellers and feeds. Web config is public by design;
-// access is enforced by firestore.rules.
-export const appId = campus.dataNamespace;
-const DATA_PATH = ['artifacts', appId, 'public', 'data'];
+// Each university's marketplace lives under artifacts/{universityId}/public/data/..., so listings,
+// sellers and feeds stay separate. Web config is public by design; access is enforced by firestore.rules.
+const dataPath = (uni) => ['artifacts', uni, 'public', 'data'];
 
-// Listings keep the historical "services" collection name so existing data stays visible.
-export const listingsCol = () => collection(db, ...DATA_PATH, 'services');
-export const listingDoc = (id) => doc(db, ...DATA_PATH, 'services', id);
-export const postsCol = () => collection(db, ...DATA_PATH, 'community_posts');
-export const postDoc = (id) => doc(db, ...DATA_PATH, 'community_posts', id);
-export const profilesCol = () => collection(db, ...DATA_PATH, 'profiles');
-export const profileDoc = (uid) => doc(db, ...DATA_PATH, 'profiles', uid);
+// Listings keep the historical "services" collection name.
+export const listingsCol = (uni) => collection(db, ...dataPath(uni), 'services');
+export const listingDoc = (uni, id) => doc(db, ...dataPath(uni), 'services', id);
+export const postsCol = (uni) => collection(db, ...dataPath(uni), 'community_posts');
+export const postDoc = (uni, id) => doc(db, ...dataPath(uni), 'community_posts', id);
+export const profilesCol = (uni) => collection(db, ...dataPath(uni), 'profiles');
+export const profileDoc = (uni, uid) => doc(db, ...dataPath(uni), 'profiles', uid);
+
+// University settings, editable by that university's admins.
+export const universitiesCol = () => collection(db, 'universities');
+export const universityDoc = (uni) => doc(db, 'universities', uni);
+export const uniAdminsCol = (uni) => collection(db, 'universities', uni, 'admins');
+export const uniAdminDoc = (uni, uid) => doc(db, 'universities', uni, 'admins', uid);
+
+// Platform admins (created in the Firebase console) can add universities and act as admin anywhere.
+export const platformAdminDoc = (uid) => doc(db, 'platformAdmins', uid);
+
+// A signed-in user's home university, so the app opens there on any device.
+export const userDoc = (uid) => doc(db, 'users', uid);
 
 export const API_URL =
   import.meta.env.VITE_API_URL || campus.paymentsApiUrl || (import.meta.env.DEV ? 'http://localhost:5000' : '');

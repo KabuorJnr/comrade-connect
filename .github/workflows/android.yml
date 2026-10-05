@@ -25,6 +25,10 @@ on:
         description: 'Build a release APK + AAB (signed when the CC_KEYSTORE_* secrets are set)'
         type: boolean
         default: false
+      publish:
+        description: 'Publish the APKs as a GitHub Release (direct download link)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -101,3 +105,29 @@ jobs:
           name: ${{ matrix.campus }}-android
           path: release/${{ matrix.campus }}/
           if-no-files-found: error
+
+  # Publishes every APK as a GitHub Release. The newest is always at
+  # https://github.com/<owner>/<repo>/releases/latest
+  publish:
+    needs: build
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: apks
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+        run: |
+          ls -la apks
+          gh release create "$TAG" apks/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Android build ${{ github.run_number }} (${GITHUB_REF_NAME})" \
+            --notes "Android APKs built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}. Install the .apk on a phone (allow installs from unknown sources)." \
+            --latest

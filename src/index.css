@@ -87,3 +87,96 @@ select option {
 .surface-glow {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
+
+@keyframes fadeBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fade-backdrop {
+  animation: fadeBackdrop 0.2s ease-out forwards;
+}
+
+.animate-toast {
+  animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Map pins (Leaflet divIcons). Zero-size anchor; content is positioned above the point. */
+.cc-marker {
+  background: none;
+  border: none;
+}
+
+.cc-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  transform-origin: center;
+  margin-top: -4px;
+  border-radius: 50% 50% 50% 0;
+  background: rgb(var(--brand));
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.cc-price {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 8px));
+  white-space: nowrap;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font: 700 12px/1.2 Inter, system-ui, sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.cc-price::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #fff;
+  border-bottom: 0;
+}
+
+.cc-price.is-sold {
+  background: #3a3a3c;
+  color: #c7c7cc;
+}
+
+.cc-price.is-sold::after {
+  border-top-color: #3a3a3c;
+}
+
+.leaflet-container {
+  background: #111;
+  font-family: Inter, system-ui, sans-serif;
+}

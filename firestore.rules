@@ -1,6 +1,13 @@
 rules_version = '2';
 
-// Deploy with: firebase deploy --only firestore:rules --project comrade-connect-184cb
+// Deploy with: firebase deploy --only firestore:rules --project data
+//
+// Roles
+//   platform admin   - a document at platformAdmins/{uid}, created by hand in the Firebase console.
+//                      Can add universities and acts as an admin of every university.
+//   university admin - a document at universities/{uni}/admins/{uid}. Can customise that university
+//                      (name, colours, logo, categories, locations), verify sellers, remove listings
+//                      and posts, and appoint other admins for it.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -17,6 +24,19 @@ service cloud.firestore {
       return registered() && request.auth.uid == uid;
     }
 
+    function isPlatformAdmin() {
+      return registered() && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid));
+    }
+
+    function isUniAdmin(uni) {
+      return isPlatformAdmin()
+        || (registered() && exists(/databases/$(database)/documents/universities/$(uni)/admins/$(request.auth.uid)));
+    }
+
+    function universityExists(uni) {
+      return exists(/databases/$(database)/documents/universities/$(uni));
+    }
+
     function onlyChanges(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
@@ -25,22 +45,90 @@ service cloud.firestore {
       return p is string && p.matches('^254[17][0-9]{8}$');
     }
 
+    function validPoint(p) {
+      return p is map && p.keys().hasOnly(['lat', 'lng', 'zoom'])
+        && p.lat is number && p.lat >= -90 && p.lat <= 90
+        && p.lng is number && p.lng >= -180 && p.lng <= 180
+        && (!('zoom' in p) || (p.zoom is number && p.zoom >= 1 && p.zoom <= 19));
+    }
+
+    function validStringList(list, maxItems, maxLength) {
+      return list is list && list.size() <= maxItems
+        && (list.size() == 0 || (list[0] is string && list[0].size() <= maxLength));
+    }
+
+    match /platformAdmins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // A user's home university, so the app opens there on any device.
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['university', 'updatedAt'])
+        && request.resource.data.university is string
+        && universityExists(request.resource.data.university);
+    }
+
+    match /universities/{uni} {
+      function validUniversity() {
+        let d = request.resource.data;
+        return d.name is string && d.name.size() >= 2 && d.name.size() <= 80
+          && d.shortName is string && d.shortName.size() >= 1 && d.shortName.size() <= 24
+          && d.tagline is string && d.tagline.size() <= 200
+          && d.theme.primary is string && d.theme.primary.matches('^#[0-9a-fA-F]{6}$')
+          && d.categories is list && d.categories.size() >= 1
+          && validStringList(d.categories, 30, 30)
+          && validStringList(d.locations, 100, 50)
+          && d.logo is string && d.logo.size() < 200000
+          && d.status in ['active', 'hidden']
+          && (d.get('map', null) == null || validPoint(d.map));
+      }
+
+      allow read: if true;
+      allow create: if isPlatformAdmin() && uni.matches('^[a-z0-9][a-z0-9-]{1,39}$') && validUniversity();
+      // University admins customise branding; only platform admins change status (show/hide).
+      allow update: if validUniversity()
+        && (isPlatformAdmin()
+            || (isUniAdmin(uni) && onlyChanges(['name', 'shortName', 'tagline', 'theme', 'categories',
+                                                'locations', 'logo', 'map', 'updatedAt', 'updatedBy'])));
+      allow delete: if isPlatformAdmin();
+
+      match /admins/{uid} {
+        allow read: if true;
+        allow create: if isUniAdmin(uni)
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'addedBy', 'addedAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.name is string
+          && request.resource.data.addedBy == request.auth.uid;
+        allow delete: if isUniAdmin(uni);
+        allow update: if false;
+      }
+    }
+
+    // Per-university marketplace data. {appId} is the university id.
     match /artifacts/{appId}/public/data {
 
-      // Public seller profiles: anyone can browse, only the owner can write. isPro is set by the backend only.
+      // Public seller profiles. isPro is set by the payment backend only; `verified` only by admins.
       match /profiles/{uid} {
+        function validProfile() {
+          let d = request.resource.data;
+          return d.uid == uid
+            && d.name is string && d.name.size() > 0
+            && d.role in ['student', 'merchant', 'trader']
+            && validPhone(d.phone);
+        }
+
         allow read: if true;
-        allow create: if isOwner(uid)
-          && request.resource.data.uid == uid
-          && request.resource.data.name is string && request.resource.data.name.size() > 0
-          && request.resource.data.role in ['student', 'merchant', 'trader']
-          && validPhone(request.resource.data.phone)
-          && request.resource.data.get('isPro', false) == false;
-        allow update: if isOwner(uid)
-          && request.resource.data.uid == uid
-          && request.resource.data.role in ['student', 'merchant', 'trader']
-          && validPhone(request.resource.data.phone)
-          && request.resource.data.get('isPro', false) == resource.data.get('isPro', false);
+        allow create: if isOwner(uid) && universityExists(appId) && validProfile()
+          && request.resource.data.get('isPro', false) == false
+          && request.resource.data.get('verified', false) == false;
+        allow update: if (isOwner(uid) && validProfile()
+              && request.resource.data.get('isPro', false) == resource.data.get('isPro', false)
+              && request.resource.data.get('verified', false) == resource.data.get('verified', false))
+          || (isUniAdmin(appId) && onlyChanges(['verified', 'verifiedBy', 'updatedAt'])
+              && request.resource.data.verified is bool);
         allow delete: if isOwner(uid);
       }
 
@@ -58,24 +146,25 @@ service cloud.firestore {
             && d.status in ['available', 'sold']
             && validPhone(d.phone)
             && (d.get('image', '') == '' || (d.image is string && d.image.size() < 800000))
+            && (d.get('geo', null) == null || validPoint(d.geo))
             && (d.get('sellerPro', false) == false || sellerIsPro());
         }
 
         allow read: if true;
-        allow create: if registered()
+        allow create: if registered() && universityExists(appId)
           && request.resource.data.sellerId == request.auth.uid
           && request.resource.data.status == 'available'
           && validListing();
         allow update: if isOwner(resource.data.get('sellerId', ''))
           && request.resource.data.sellerId == resource.data.sellerId
           && validListing();
-        allow delete: if isOwner(resource.data.get('sellerId', ''));
+        allow delete: if isOwner(resource.data.get('sellerId', '')) || isUniAdmin(appId);
       }
 
       // Campus feed.
       match /community_posts/{postId} {
         allow read: if true;
-        allow create: if registered()
+        allow create: if registered() && universityExists(appId)
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.content is string
           && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 1000
@@ -87,7 +176,7 @@ service cloud.firestore {
               && request.resource.data.likedBy.toSet().difference(resource.data.get('likedBy', []).toSet())
                    .union(resource.data.get('likedBy', []).toSet().difference(request.resource.data.likedBy.toSet()))
                    .hasOnly([request.auth.uid]));
-        allow delete: if isOwner(resource.data.get('authorId', ''));
+        allow delete: if isOwner(resource.data.get('authorId', '')) || isUniAdmin(appId);
       }
     }
   }

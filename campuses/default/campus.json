@@ -1,17 +1,16 @@
 {
-  "appName": "ComradeConnect",
-  "campusName": "Campus",
-  "tagline": "Students, merchants and traders in one place. Register, list what you sell, and reach the whole campus.",
+  "appName": "ChuoHub",
+  "university": null,
+  "tagline": "Kenya's campus marketplace. Students, merchants and traders at every university, buying and selling in one place.",
   "android": {
-    "appId": "com.comradeconnect.app",
+    "appId": "com.chuohub.app",
     "versionName": "1.0.0",
     "versionCode": 1
   },
   "theme": {
-    "primary": "#0071e3",
+    "primary": "#0f766e",
     "background": "#000000"
   },
-  "dataNamespace": "comrade-connect-184cb",
   "currency": "Ksh",
   "categories": [
     "Electronics",
@@ -27,7 +26,6 @@
     "Housing",
     "Other"
   ],
-  "locations": [],
   "pro": {
     "enabled": true,
     "price": 250
@@ -41,5 +39,14 @@
     "messagingSenderId": "910700491278",
     "appId": "1:910700491278:web:db134716aa726302c3425f",
     "measurementId": "G-J52ZHC57WM"
+  },
+  "map": {
+    "center": [
+      -1.2864,
+      36.8172
+    ],
+    "zoom": 6,
+    "tileUrl": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "attribution": "&copy; OpenStreetMap contributors"
   }
 }

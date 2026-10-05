@@ -72,11 +72,15 @@ export function loadCampus(id = activeCampusId()) {
   if (!campus.android?.versionName) errors.push('android.versionName is required');
   if (!hex.test(campus.theme?.primary || '')) errors.push('theme.primary must be a hex colour like #0071e3');
   if (!hex.test(campus.theme?.background || '')) errors.push('theme.background must be a hex colour like #000000');
-  if (!/^[A-Za-z0-9_-]+$/.test(campus.dataNamespace || '')) {
-    errors.push('dataNamespace may only contain letters, numbers, dashes and underscores');
+  if (campus.university != null && !/^[a-z0-9][a-z0-9-]{1,39}$/.test(campus.university)) {
+    errors.push('university must be a university id (lowercase letters, numbers, dashes) or null');
   }
   if (!Array.isArray(campus.categories) || !campus.categories.length) errors.push('categories must be a non-empty list');
-  if (!Array.isArray(campus.locations)) errors.push('locations must be a list');
+  const map = campus.map || {};
+  if (!Array.isArray(map.center) || map.center.length !== 2 || !map.center.every(Number.isFinite)) {
+    errors.push('map.center must be [latitude, longitude]');
+  }
+  if (!map.tileUrl) errors.push('map.tileUrl is required');
   if (!campus.firebase?.apiKey || !campus.firebase?.projectId) errors.push('firebase config is incomplete');
   if (errors.length) throw new Error(`campuses/${id}/campus.json:\n  - ${errors.join('\n  - ')}`);
 

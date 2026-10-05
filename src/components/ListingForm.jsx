@@ -1,29 +1,36 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, Trash2, Loader2 } from 'lucide-react';
 import { listingsCol, listingDoc } from '../lib/firebase';
 import { campus, LOCATIONS_LIST_ID } from '../lib/campus';
-import { CATEGORIES, normalizePhone, compressImage } from '../lib/utils';
-import { Modal, Field, Button, Notice, inputClass } from './ui';
+import { useUniversity } from '../lib/university';
+import { useFeedback } from '../lib/feedback';
+import { normalizePhone, localPhone, compressImage } from '../lib/utils';
+import { Modal, Field, Button, Notice, Segmented, inputClass } from './ui';
+import { LocationPicker } from './LazyMaps';
 
 // Create a new listing, or edit one the current user owns (pass `listing`).
-export default function ListingForm({ open, onClose, user, profile, listing, onSaved }) {
+export default function ListingForm({ open, onClose, user, profile, listing }) {
+  const uni = useUniversity();
+  const { toast } = useFeedback();
   const editing = Boolean(listing);
   const [form, setForm] = useState(() => ({
     kind: listing?.kind || 'product',
     title: listing?.title || '',
     description: listing?.description || '',
-    category: listing?.category || CATEGORIES[0],
+    category: uni.categories.includes(listing?.category) ? listing.category : uni.categories[0],
     price: listing?.price ?? '',
     priceType: listing?.priceType || 'Fixed',
     location: listing?.location || profile?.location || '',
-    phone: listing?.phone || profile?.phone || '',
+    phone: localPhone(listing?.phone || profile?.phone),
     image: listing?.image || '',
+    geo: listing?.geo || null,
   }));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [imageBusy, setImageBusy] = useState(false);
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const setGeo = useCallback((geo) => setForm((f) => ({ ...f, geo })), []);
 
   const handleImage = async (e) => {
     const file = e.target.files?.[0];
@@ -47,7 +54,7 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
     const price = Number(form.price);
     const phone = normalizePhone(form.phone);
     if (!form.title.trim()) return setError('Give your listing a title.');
-    if (!Number.isFinite(price) || price < 0) return setError('Enter a valid price.');
+    if (form.price === '' || !Number.isFinite(price) || price < 0) return setError('Enter a valid price.');
     if (!phone) return setError('Enter a valid Kenyan phone number buyers can reach.');
 
     setBusy(true);
@@ -62,15 +69,16 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
         location: form.location.trim(),
         phone,
         image: form.image || '',
+        geo: form.geo ? { lat: form.geo.lat, lng: form.geo.lng } : null,
         seller: profile?.businessName || profile?.name || user.displayName || 'Comrade',
         sellerRole: profile?.role || 'student',
         sellerPro: Boolean(profile?.isPro),
         updatedAt: serverTimestamp(),
       };
       if (editing) {
-        await updateDoc(listingDoc(listing.id), data);
+        await updateDoc(listingDoc(uni.id, listing.id), data);
       } else {
-        await addDoc(listingsCol(), {
+        await addDoc(listingsCol(uni.id), {
           ...data,
           sellerId: user.uid,
           userId: user.uid,
@@ -78,12 +86,12 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
           createdAt: serverTimestamp(),
         });
       }
-      onSaved?.(editing ? 'Listing updated.' : 'Your listing is live on the marketplace.');
+      toast(editing ? 'Listing updated' : 'Your listing is live');
       onClose();
     } catch (err) {
       setError(
         err.code === 'permission-denied'
-          ? 'You do not have permission to save this listing. Make sure you are signed in.'
+          ? "You don't have permission to save this listing. Make sure you're signed in."
           : err.message || 'Could not save listing.',
       );
     } finally {
@@ -92,47 +100,49 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={editing ? 'Edit listing' : 'Sell something'} wide>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-[#1d1d1f] p-1">
-          {[
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={editing ? 'Edit listing' : 'New listing'}
+      subtitle={editing ? undefined : `Free to list at ${uni.shortName}`}
+      wide
+      footer={
+        <Button type="submit" form="listing-form" variant="light" loading={busy} disabled={imageBusy} className="w-full">
+          {editing ? 'Save changes' : 'Publish listing'}
+        </Button>
+      }
+    >
+      <form id="listing-form" onSubmit={handleSubmit} className="space-y-4">
+        <Segmented
+          label="Listing type"
+          value={form.kind}
+          onChange={(kind) => setForm({ ...form, kind })}
+          options={[
             ['product', 'Product'],
             ['service', 'Service'],
-          ].map(([value, label]) => (
+          ]}
+        />
+
+        {form.image ? (
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black">
+            <img src={form.image} alt="Listing preview" className="max-h-64 w-full object-contain" />
             <button
               type="button"
-              key={value}
-              onClick={() => setForm({ ...form, kind: value })}
-              className={`rounded-full py-2 text-sm font-medium transition-colors ${
-                form.kind === value ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={() => setForm({ ...form, image: '' })}
+              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur hover:bg-black"
+              aria-label="Remove photo"
             >
-              {label}
+              <Trash2 className="h-4 w-4" />
             </button>
-          ))}
-        </div>
-
-        <div>
-          {form.image ? (
-            <div className="relative overflow-hidden rounded-2xl border border-white/10">
-              <img src={form.image} alt="Listing preview" className="max-h-60 w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, image: '' })}
-                className="absolute right-3 top-3 rounded-full bg-black/70 p-2 text-white hover:bg-black"
-                aria-label="Remove photo"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#1d1d1f] py-8 text-sm text-gray-400 hover:text-white">
-              <ImagePlus className="h-6 w-6" />
-              {imageBusy ? 'Processing photo…' : 'Add a photo (optional)'}
-              <input type="file" accept="image/*" className="hidden" onChange={handleImage} disabled={imageBusy} />
-            </label>
-          )}
-        </div>
+          </div>
+        ) : (
+          <label className="flex min-h-[132px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] text-sm text-gray-400 transition-colors hover:border-white/30 hover:text-white focus-within:border-brand">
+            {imageBusy ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
+            <span>{imageBusy ? 'Processing photo…' : 'Add a photo'}</span>
+            <span className="text-xs text-gray-600">Listings with photos sell faster</span>
+            <input type="file" accept="image/*" className="sr-only" onChange={handleImage} disabled={imageBusy} />
+          </label>
+        )}
 
         <Field label="Title">
           <input
@@ -145,7 +155,7 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
           />
         </Field>
 
-        <Field label="Description">
+        <Field label="Description" hint={`${form.description.length}/1000`}>
           <textarea
             rows={3}
             maxLength={1000}
@@ -156,10 +166,10 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Category">
             <select className={inputClass} value={form.category} onChange={set('category')}>
-              {CATEGORIES.map((c) => (
+              {uni.categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -172,6 +182,7 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
               type="number"
               min="0"
               inputMode="numeric"
+              placeholder="0"
               className={inputClass}
               value={form.price}
               onChange={set('price')}
@@ -179,33 +190,38 @@ export default function ListingForm({ open, onClose, user, profile, listing, onS
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Pricing">
-            <select className={inputClass} value={form.priceType} onChange={set('priceType')}>
-              <option value="Fixed">Fixed</option>
-              <option value="Negotiable">Negotiable</option>
-            </select>
-          </Field>
+        <Segmented
+          label="Pricing"
+          value={form.priceType}
+          onChange={(priceType) => setForm({ ...form, priceType })}
+          options={[
+            ['Fixed', 'Fixed price'],
+            ['Negotiable', 'Negotiable'],
+          ]}
+        />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Location">
             <input
-              placeholder={campus.locations[0] ? `e.g. ${campus.locations[0]}` : 'e.g. Hall 6'}
+              placeholder={uni.locations[0] ? `e.g. ${uni.locations[0]}` : 'e.g. Hall 6'}
               list={LOCATIONS_LIST_ID}
               className={inputClass}
               value={form.location}
               onChange={set('location')}
             />
           </Field>
+          <Field label="Contact phone">
+            <input required type="tel" inputMode="tel" className={inputClass} value={form.phone} onChange={set('phone')} />
+          </Field>
         </div>
 
-        <Field label="Contact phone">
-          <input required type="tel" className={inputClass} value={form.phone} onChange={set('phone')} />
-        </Field>
+        <div>
+          <span className="mb-1.5 ml-1 block text-xs font-medium text-gray-400">Meeting point on the map (optional)</span>
+          <LocationPicker value={form.geo} onChange={setGeo} center={uni.map} zoom={uni.map.zoom} />
+          <p className="ml-1 mt-1.5 text-xs text-gray-500">Buyers get directions here. Pick a public spot on campus.</p>
+        </div>
 
         <Notice>{error}</Notice>
-
-        <Button type="submit" variant="light" loading={busy} disabled={imageBusy} className="w-full">
-          {editing ? 'Save changes' : 'Publish listing'}
-        </Button>
       </form>
     </Modal>
   );

@@ -1,7 +1,5 @@
 import { campus } from './campus';
 
-export const CATEGORIES = campus.categories;
-
 export const ROLES = {
   student: { label: 'Student', blurb: 'Buy and sell as a comrade' },
   merchant: { label: 'Merchant', blurb: 'Run a campus business or shop' },
@@ -16,6 +14,16 @@ export function normalizePhone(raw) {
   if (digits.startsWith('0')) digits = `254${digits.slice(1)}`;
   else if (digits.length === 9 && /^[17]/.test(digits)) digits = `254${digits}`;
   return /^254[17]\d{8}$/.test(digits) ? digits : '';
+}
+
+// 254712345678 -> 0712345678, for showing a stored number in a form.
+export function localPhone(phone) {
+  return /^254\d{9}$/.test(phone || '') ? `0${phone.slice(3)}` : phone || '';
+}
+
+// Opens turn-by-turn directions in Google Maps (the app on Android, the website elsewhere).
+export function directionsUrl({ lat, lng }) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
 
 export function whatsappLink(phone, text) {
@@ -51,18 +59,15 @@ export function formatPrice(price) {
 }
 
 export function initials(name) {
-  return (
-    String(name || '?')
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase())
-      .join('') || '?'
-  );
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '?';
+  // "JKUAT" -> "JK", "Jane Wanjiru" -> "JW"
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 }
 
 // Downscales an image file to a JPEG data URL small enough to store inside a Firestore document.
-export function compressImage(file, maxSize = 900, maxBytes = 600_000) {
+export function compressImage(file, maxSize = 900, maxBytes = 600_000, type = 'image/jpeg') {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
       reject(new Error('Please choose an image file.'));
@@ -78,10 +83,10 @@ export function compressImage(file, maxSize = 900, maxBytes = 600_000) {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       let quality = 0.8;
-      let data = canvas.toDataURL('image/jpeg', quality);
-      while (data.length > maxBytes && quality > 0.3) {
+      let data = canvas.toDataURL(type, quality);
+      while (data.length > maxBytes && quality > 0.3 && type === 'image/jpeg') {
         quality -= 0.1;
-        data = canvas.toDataURL('image/jpeg', quality);
+        data = canvas.toDataURL(type, quality);
       }
       if (data.length > maxBytes) reject(new Error('Image is too large. Try a smaller photo.'));
       else resolve(data);

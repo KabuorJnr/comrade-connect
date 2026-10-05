@@ -173,23 +173,23 @@ function createCampus() {
   }
   const campusName = args[1] || id.toUpperCase();
   const appName = args[0] || `${campusName} Connect`;
+  // A dedicated app for one university: it opens straight into that university (no picker).
   const config = {
     appName,
-    campusName,
-    tagline: `Students, merchants and traders at ${campusName} in one place. Register, list what you sell, and reach the whole campus.`,
+    university: id,
+    tagline: `The ${campusName} marketplace for students, merchants and traders.`,
     android: {
-      appId: `com.comradeconnect.${id.replace(/-/g, '_').replace(/^(\d)/, 'c$1')}`,
+      appId: `com.chuohub.${id.replace(/-/g, '_').replace(/^(\d)/, 'c$1')}`,
       versionName: '1.0.0',
       versionCode: 1,
     },
     theme: { primary: '#0071e3', background: '#000000' },
-    dataNamespace: id,
-    locations: [],
   };
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'campus.json'), `${JSON.stringify(config, null, 2)}\n`);
   loadCampus(id);
-  console.log(`Created campuses/${id}/campus.json. Edit it, optionally add campuses/${id}/logo.png, then run:
+  console.log(`Created campuses/${id}/campus.json. It opens straight into the university with id "${id}",
+which the super admin must create in the app first. Optionally add campuses/${id}/logo.png, then run:
   npm run campus -- dev ${id}
   npm run campus -- apk ${id}`);
 }

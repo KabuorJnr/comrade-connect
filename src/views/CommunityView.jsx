@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Users } from 'lucide-react';
-import { campus } from '../lib/campus';
+import { MessagesSquare, PenSquare } from 'lucide-react';
+import { useUniversity } from '../lib/university';
 import { PostComposer, PostCard } from '../components/Community';
-import { EmptyState, Spinner } from '../components/ui';
+import { EmptyState, RowSkeletons, Chip, Button } from '../components/ui';
 
 const FILTERS = [
   ['all', 'All'],
@@ -11,7 +11,8 @@ const FILTERS = [
   ['Announcement', 'Notices'],
 ];
 
-export default function CommunityView({ posts, loading, user, profile, isGuest, onRequireAuth }) {
+export default function CommunityView({ posts, loading, user, profile, isGuest, isAdmin, onRequireAuth }) {
+  const uni = useUniversity();
   const [filter, setFilter] = useState('all');
   const filtered = useMemo(
     () => (filter === 'all' ? posts : posts.filter((p) => (p.type || 'General') === filter)),
@@ -20,46 +21,53 @@ export default function CommunityView({ posts, loading, user, profile, isGuest, 
 
   return (
     <div className="animate-fade-in space-y-4">
-      <section className="rounded-3xl border border-white/5 bg-[#1d1d1f] p-6 text-center">
-        <h2 className="text-2xl font-semibold tracking-tighter text-white">{campus.campusName} feed</h2>
-        <p className="mx-auto mt-1 max-w-xs text-sm text-gray-400">Events, notices and updates from comrades and sellers.</p>
-      </section>
+      <header className="px-1">
+        <h1 className="text-2xl font-bold tracking-tight text-white">{uni.shortName} feed</h1>
+        <p className="mt-0.5 text-sm text-gray-400">Events, notices and updates from comrades and sellers.</p>
+      </header>
 
       {isGuest ? (
         <button
           type="button"
           onClick={onRequireAuth}
-          className="w-full rounded-3xl border border-dashed border-white/15 bg-[#1d1d1f] p-4 text-sm text-gray-400 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-3xl border border-dashed border-white/15 bg-white/[0.02] p-4 text-left text-sm text-gray-400 hover:text-white"
         >
-          Sign in to post to the campus feed
+          <PenSquare className="h-5 w-5" aria-hidden="true" /> Sign in to post to the {uni.shortName} feed
         </button>
       ) : (
         <PostComposer user={user} profile={profile} />
       )}
 
-      <div className="grid grid-cols-4 gap-1 rounded-lg bg-[#1d1d1f] p-1">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto" role="tablist" aria-label="Filter posts">
         {FILTERS.map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setFilter(value)}
-            className={`rounded-md py-1.5 text-xs font-medium ${
-              filter === value ? 'bg-[#636366] text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
+          <Chip key={value} active={filter === value} onClick={() => setFilter(value)}>
             {label}
-          </button>
+          </Chip>
         ))}
       </div>
 
       {loading ? (
-        <Spinner />
+        <RowSkeletons count={3} />
       ) : filtered.length ? (
-        filtered.map((post) => (
-          <PostCard key={post.id} post={post} user={user} isGuest={isGuest} onRequireAuth={onRequireAuth} />
-        ))
+        <div className="space-y-3">
+          {filtered.map((post) => (
+            <PostCard key={post.id} post={post} user={user} isGuest={isGuest} isAdmin={isAdmin} onRequireAuth={onRequireAuth} />
+          ))}
+        </div>
       ) : (
-        <EmptyState icon={Users} title="Nothing here yet" text="Start the conversation." />
+        <EmptyState
+          icon={MessagesSquare}
+          title={posts.length ? 'Nothing in this filter' : 'The feed is quiet'}
+          text={posts.length ? 'Try another filter.' : 'Start the conversation with your campus.'}
+          action={
+            !posts.length &&
+            isGuest && (
+              <Button size="sm" onClick={onRequireAuth}>
+                Sign in to post
+              </Button>
+            )
+          }
+        />
       )}
     </div>
   );
