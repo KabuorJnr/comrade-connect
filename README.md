@@ -120,7 +120,7 @@ free tile servers are for light use; before a large launch, point `map.tileUrl` 
 
 **Easiest: GitHub builds it.** The **Android APK** workflow builds an APK for every folder in
 `campuses/`. Run it from the *Actions* tab (*Run workflow*, keep *publish* ticked) and the APKs are
-published to **[Releases](https://github.com/KabuorJnr/comrade-connect/releases/latest)**. Pushes to
+attached to **[Releases](https://github.com/KabuorJnr/comrade-connect/releases/latest)**. Pushes to
 `main` publish automatically.
 
 **On your computer** (Android Studio / Android SDK and JDK 21):
